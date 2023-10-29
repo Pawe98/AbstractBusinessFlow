@@ -23,6 +23,8 @@ public class ApplicationFlow {
      */
     @EventListener(ContextRefreshedEvent.class)
     public void startApplicationFlow() {
+
+        //todo pawe Move .next() out of function into a BusinessFlow implementation, where a chain of functions is established and then run.
         //Logic:
         //
         // adds ABC to the start of the String
