@@ -1,6 +1,6 @@
 package com.example.demo.application.flows;
 
-import com.example.demo.application.functions.impl.AddAbcToString;
+import com.example.demo.application.functions.impl.AddABCToString;
 import com.example.demo.application.functions.impl.AddXYZToString;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class ApplicationFlow {
-    private AddAbcToString addAbcToString;
+    private AddABCToString addAbcToString;
     private AddXYZToString addXYZToString;
 
     /**

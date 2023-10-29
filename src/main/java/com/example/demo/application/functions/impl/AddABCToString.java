@@ -4,7 +4,7 @@ import com.example.demo.application.functions.ConditionalApplicationFunction;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AddAbcToString extends ConditionalApplicationFunction<String> {
+public class AddABCToString extends ConditionalApplicationFunction<String> {
 
     @Override
     public String function(String to) {
