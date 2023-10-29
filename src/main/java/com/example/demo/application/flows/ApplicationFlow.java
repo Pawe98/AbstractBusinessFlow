@@ -1,7 +1,7 @@
 package com.example.demo.application.flows;
 
-import com.example.demo.application.functions.impl.AddABCToString;
-import com.example.demo.application.functions.impl.AddXYZToString;
+import com.example.demo.application.functions.impl.AddABCConditionalFunction;
+import com.example.demo.application.functions.impl.AddXYZSimpleFunction;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class ApplicationFlow {
-    private AddABCToString addAbcToString;
-    private AddXYZToString addXYZToString;
+    private AddABCConditionalFunction addAbcConditionalFunction;
+    private AddXYZSimpleFunction addXYZSimpleFunction;
 
     /**
      * The objective of the ApplicationFunction is to encapsulate the entirety of a function's logic,
@@ -40,12 +40,12 @@ public class ApplicationFlow {
 
 
         //adds ABC to the start of the string, calls isTrue() when string ends with A
-        addAbcToString.init(myToA)
+        addAbcConditionalFunction.init(myToA)
                 .isTrue((myToABC) -> System.out.println("DEBUG: value ends with A " + myToABC))
                 .isFalse((myToABC) -> System.out.println("DEBUG: Does not end with A " + myToABC))
                 .next((myToABC) ->
                         //adds XYZ to the start of the string, calls isTrue() when string ends with A
-                        addXYZToString.init(myToABC)
+                        addXYZSimpleFunction.init(myToABC)
                                 .next((myToXYZ) -> System.out.println("DEBUG: final value " + myToXYZ))
                                 .execute())
                 .execute();
@@ -55,12 +55,12 @@ public class ApplicationFlow {
 
 
         //adds ABC to the start of the string, calls isTrue() when string ends with A
-        addAbcToString.init(myToB)
+        addAbcConditionalFunction.init(myToB)
                 .isTrue((transformedABCTo) -> System.out.println("DEBUG: value ends with A " + transformedABCTo))
                 .isFalse((transformedABCTo) -> System.out.println("DEBUG: Does not end with A " + transformedABCTo))
                 .next((transformedABCTo) ->
                         //adds XYZ to the start of the string, calls isTrue() when string ends with A
-                        addXYZToString.init(transformedABCTo)
+                        addXYZSimpleFunction.init(transformedABCTo)
                                 .next((transformedXYZTo) -> System.out.println("DEBUG: final value " + transformedXYZTo))
                                 .execute())
                 .execute();
