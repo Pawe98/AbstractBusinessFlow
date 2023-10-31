@@ -1,18 +1,20 @@
 package com.example.demo.application.functions.impl;
 
-import com.example.demo.application.functions.ConditionalApplicationFunction;
-import org.springframework.stereotype.Component;
+import com.example.demo.application.functions.AbstractApplicationFunction;
 
-@Component
-public class AddABCConditionalFunction extends ConditionalApplicationFunction<String> {
+import java.util.Optional;
+
+
+public class AddABCConditionalFunction extends AbstractApplicationFunction<String> {
+
 
     @Override
-    public String function(String to) {
-        return "ABC" + to;
+    public String execute() {
+        return "ABC" + model;
     }
 
     @Override
-    public boolean trueFalseLogic() {
-        return model.charAt(model.length() - 1) == 'A';
+    public Optional<Boolean> trueFalseLogic() {
+        return Optional.of(model.charAt(model.length() - 1) == 'A');
     }
 }
