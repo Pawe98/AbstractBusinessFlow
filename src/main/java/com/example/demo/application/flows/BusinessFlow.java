@@ -16,6 +16,8 @@ public class BusinessFlow<T> {
     private TreeNode<AbstractApplicationFunction<T>> current;
 
     private boolean started = false;
+    private boolean terminate = false;
+    private TreeNode<AbstractApplicationFunction<T>> previousBuilderMethod;
 
     private BusinessFlow(T model) {
         this.model = model;
@@ -23,14 +25,19 @@ public class BusinessFlow<T> {
         current = root;
     }
 
-    public static <T> BusinessFlow<T> init(T model) {
-        BusinessFlow<T> businessFlow = new BusinessFlow<>(model);
+    public static <T> BusinessFlow<T> init(Class<T> tClass) {
+        BusinessFlow<T> businessFlow = new BusinessFlow<>(null);
         return businessFlow;
     }
 
-    public static <T> BusinessFlow<T> changeModel(T model, BusinessFlow<T> businessFlow) {
+    public static <T> BusinessFlow<T> receive(T model, BusinessFlow<T> businessFlow) {
         businessFlow.setModel(model);
         return businessFlow;
+    }
+
+    public BusinessFlow<T> terminate() {
+        previousBuilderMethod.setTerminal(true);
+        return this;
     }
 
     private void setModel(T model) {
@@ -46,15 +53,37 @@ public class BusinessFlow<T> {
         return this;
     }
 
+    public BusinessFlow<T> startFunction(Consumer<T> firstFunction) {
+        if (started) {
+            throw new RuntimeException("Business Flow was already started.");
+        }
+        started = true;
+        nextFunction(firstFunction);
+        return this;
+    }
+
+    public BusinessFlow<T> startFunction(Function<T, T> firstFunction, boolean useReturnValue) {
+        if (started) {
+            throw new RuntimeException("Business Flow was already started.");
+        }
+        started = true;
+        nextFunction(firstFunction, useReturnValue);
+        return this;
+    }
+
     public BusinessFlow<T> whenTrueDo(AbstractApplicationFunction<T> trueFunction) {
         TreeNode<AbstractApplicationFunction<T>> trueNode = new TreeNode<>(trueFunction);
         current.setTrueChild(trueNode);
+        trueNode.setParent(current);
+        previousBuilderMethod = trueNode;
         return this;
     }
 
     public BusinessFlow<T> whenFalseDo(AbstractApplicationFunction<T> falseFunction) {
         TreeNode<AbstractApplicationFunction<T>> falseNode = new TreeNode<>(falseFunction);
         current.setFalseChild(falseNode);
+        falseNode.setParent(current);
+        previousBuilderMethod = falseNode;
         return this;
     }
 
@@ -62,6 +91,8 @@ public class BusinessFlow<T> {
         TreeNode<AbstractApplicationFunction<T>> nextNode = new TreeNode<>(nextFunction);
         current.setNextChild(nextNode);
         current = nextNode;
+        nextNode.setParent(current);
+        previousBuilderMethod = nextNode;
         return this;
     }
 
@@ -69,12 +100,16 @@ public class BusinessFlow<T> {
     public BusinessFlow<T> whenTrueDo(Consumer<T> trueConsumer) {
         TreeNode<AbstractApplicationFunction<T>> trueNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(trueConsumer));
         current.setTrueChild(trueNode);
+        trueNode.setParent(current);
+        previousBuilderMethod = trueNode;
         return this;
     }
 
     public BusinessFlow<T> whenFalseDo(Consumer<T> falseConsumer) {
         TreeNode<AbstractApplicationFunction<T>> falseNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(falseConsumer));
         current.setFalseChild(falseNode);
+        falseNode.setParent(current);
+        previousBuilderMethod = falseNode;
         return this;
     }
 
@@ -82,18 +117,24 @@ public class BusinessFlow<T> {
         TreeNode<AbstractApplicationFunction<T>> nextNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(nextConsumer));
         current.setNextChild(nextNode);
         current = nextNode;
+        nextNode.setParent(current);
+        previousBuilderMethod = nextNode;
         return this;
     }
 
     public BusinessFlow<T> whenTrueDo(Function<T, T> trueConsumer, boolean useReturnValue) {
         TreeNode<AbstractApplicationFunction<T>> trueNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(trueConsumer, useReturnValue));
         current.setTrueChild(trueNode);
+        trueNode.setParent(current);
+        previousBuilderMethod = trueNode;
         return this;
     }
 
     public BusinessFlow<T> whenFalseDo(Function<T, T> falseConsumer, boolean useReturnValue) {
         TreeNode<AbstractApplicationFunction<T>> falseNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(falseConsumer, useReturnValue));
         current.setFalseChild(falseNode);
+        falseNode.setParent(current);
+        previousBuilderMethod = falseNode;
         return this;
     }
 
@@ -101,6 +142,8 @@ public class BusinessFlow<T> {
         TreeNode<AbstractApplicationFunction<T>> nextNode = new TreeNode<>(new SimpleLambdaApplicationFunction<>(nextConsumer, useReturnValue));
         current.setNextChild(nextNode);
         current = nextNode;
+        nextNode.setParent(current);
+        previousBuilderMethod = nextNode;
         return this;
     }
 
@@ -109,11 +152,17 @@ public class BusinessFlow<T> {
     }
 
     private void executeNode(TreeNode<AbstractApplicationFunction<T>> node) {
-        if (node != null) {
+        if (node != null && !terminate) {
             var applicationFunction = node.getData();
             applicationFunction.init(model);
-            var optionalValidation = applicationFunction.trueFalseLogic();
             this.model = applicationFunction.execute();
+            var optionalValidation = applicationFunction.trueFalseLogic();
+
+            if (node.isTerminal()) {
+                log.info("Terminating Businessflow.");
+                terminate = true;
+                return;
+            }
 
             if (optionalValidation.isEmpty() && (node.getTrueChild() != null || node.getFalseChild() != null)) {
                 log.error("Your BusinessFlow adds conditional methods to a source method \"" + node.getData().getClass().getSimpleName() + "\" that is not providing a boolean for trueFalse logic. ");
